@@ -37,12 +37,15 @@ class GuestRoomClass: public GuestRoom{// GuestRoomClass是继承GuestRoom 用于生成
 			cin>>name>>capacity>>price;
 			next = NULL; 
 		} 
+		
+		void printInfo(){
+			cout<<name<<' '<<capacity<<' '<<price<<endl;
+		}
 };
 
 class Hotel{//酒店类类 
 	public:
 		string name;//酒店名 
-		string contact;//联系方式 
 		string address;//地址
 		GuestRoomClass *RoomList;//房间链表头 
 		GuestRoomClass *RoomListTail;//房间链表尾 
@@ -99,11 +102,12 @@ class HotelClass:public Hotel{//HotelClass 是继承Hotel 用于生成链表的节点类
 		} 
 		
 		HotelClass(){
-			cin>>name>>contact>>address;
+			cin>>name>>address; 
+			RoomList=RoomListTail = NULL;
 			next = NULL; 
 		}
 		void printInfo(){
-			cout<<name<<" "<<address<<" "<<contact<<endl; 
+			cout<<name<<"  @"<<address<<endl; 
 		}
 };
 
@@ -130,8 +134,9 @@ class CityClass:public City{//City Class 是继承City 用于生成链表的节点类
 		HotelClass* addHotel(){
 			HotelClass *tempPoint = new HotelClass();
 			if(HotelList == NULL)  HotelList = tempPoint;
-			else HotelListTail -> next = tempPoint; 
+			else HotelListTail -> next = tempPoint;
 			HotelListTail = tempPoint; 
+			return tempPoint;
 		}
 		
 		/*
@@ -163,6 +168,17 @@ class CityClass:public City{//City Class 是继承City 用于生成链表的节点类
 				}
 			}
 			return false;
+		}
+		
+		void printCityInfo(){
+			cout<<name<<endl;
+			HotelClass *Index = HotelList;
+			while(Index != NULL){
+				cout<<" -> ";
+				Index->printInfo();
+				Index = Index->next;
+			}
+			cout<<endl;
 		} 
 };
 CityClass* CityList = NULL;//地点链表头
@@ -177,13 +193,10 @@ CityClass* CityListTail = NULL;//地点链表尾
 */
 CityClass* findCity(string targetS){
 	CityClass *Index = CityList; 
-	if(Index == NULL) 
-		cout<<"Warning:No such city found."<<endl;
-	else{
+	if(Index != NULL) 
 		while(Index != NULL && Index->name != targetS){
 			Index = Index->next;
 		}
-	}
 	return Index; 
 } 
 
@@ -263,6 +276,8 @@ CityClass* addCity(string InputS){
 		if(CityList == NULL) CityList = tempPoint;
 		else CityListTail -> next = tempPoint;
 		CityListTail = tempPoint;
+		
+		tempPoint->HotelList = tempPoint->HotelListTail = NULL;
 	}
 	return tempPoint; 
 } 
@@ -294,16 +309,16 @@ bool deleteCity(string InputS){
 
 */
 void HotelLoadData(){
-	//openFile
+	freopen("HotelData.txt","r",stdin);
 	string InputS; 
 	int totCity=0; cin>> totCity;//地区数 
 	while(totCity--){
-		cin>> InputS;
+		cin>> InputS; 
 		CityClass *Index = addCity(InputS);
 		int totHotel=0; cin>> totHotel;//酒店数
 		while(totHotel--){
 				HotelClass *HIndex = Index->addHotel();
-				int totRoom=0; cin>> totRoom;//房间数
+				int totRoom=0; cin>> totRoom;//房间数 
 				while(totRoom--)
 					HIndex->addRoom();
 		} 
@@ -342,29 +357,51 @@ int 型返回，返回最少代价花费，默认大于0.如果返回值为-1
 则说明此酒店没有合适的客房供入住 上层菜单将依次为依据进行下一步操作 
 
 动态规划思想，设f(n)表示n个人入住所要的最小花费
-枚举房间，设房间i可住Ci人，价格Pi 有
-for_all i:1->inf, f(n)=min { f(n-Ci) + Pi }
-则说明有两层循环 一层为人数循环 for( peopleNum: 1->n) 
-二层为房间枚举循环 由于是链表 没有下标 但原理是相同的 
-初始化: for_all i:1->inf, f(i)=inf , f(0) = 0 
-最后 ans=mfor_all i:n->inf ,min{f(i)}
+枚举房间，设房间i可住Ci人，价格Pi ,那么对于所有的i<=Ci,需要比较f(i)和Pi的值
+实际意义表现为：i个人住容量为Ci，价格为Pi的房间的花费现在是否更小
+对于所有i，如果f(i+Ci)<f(i)+Pi,更新f(i+Ci)的值 
+实际意义表现为：存在一个更优的方案使得住i+Ci个人的花钱数更少
+
+**然而这里有一个很严重的问题 假设只有一个单人间 价格为108 其他都是双人间且价格贵的离谱（上千） 
+如果按上述方法进行操作发现入住3人 的最小价格为316,很明显是不对的 原因在于
+更新f(i+Ci)时，很有可能f(i)是已经更新过了的值，等价于用了该房间以后再用一次 是不对的
+因此我们使用滚动数组来替换。设cnt=0，每次与1异或，cnt表示当前处理的数组行
+每次更新是cnt^1的值更新cnt的值 这样就不会出错 
  
 */
 int calcMinPrice(HotelClass *Index,int peopleNum,int dayNum){
-	int f[15],ret=2147483647;
+	int f[2][20],ret=2147483647;
 	//最多十个人同时入住（来自携程官网）
 	//可能存在一种供住人数更多且花钱更少的方案 因此要多加几位 
-	f[0]=0;
-	for(int i=1;i<=15;i++) f[i]=2147483647; 
-	for(int pNum=1;pNum<15;pNum++){
+	f[0][0]=f[1][0]=0;
+	for(int i=1;i<=19;i++) f[0][i]=f[1][i]=200000000; 
+	GuestRoomClass *ite = Index->RoomList;
+	int cnt=0;
+	while(ite !=NULL){
+	//	ite->printInfo();
+		for(int i=1;i<20-ite->capacity;i++){
+			if(i<=ite->capacity) f[cnt][i]=min(f[cnt^1][i],ite->price);
+			if(f[cnt^1][i]+ite->price<f[cnt^1][i+ite->capacity])
+				f[cnt][i+ite->capacity]=f[cnt^1][i]+ite->price;
+			if(i>=peopleNum) ret=min(ret,f[cnt][i]);
+		}
+		ite=ite->next;
+//		for(int i=1;i<20;i++) cout<<f[cnt][i]<<' ';cout<<endl;
+		cnt^=1;
+	}
+	/*for(int pNum=1;pNum<15;pNum++){
 		GuestRoomClass *ite = Index->RoomList;
-		while(ite != NULL)
+		while(ite != NULL){
 			f[pNum] = min (f[pNum] , f[max (pNum-ite->capacity, 0)]+ite->price);
+			ite=ite->next;
+		}
 		if(pNum>=peopleNum)
 			ret = min(ret,f[pNum]);
-	}
+	}*/
 	if(ret > 100000000) ret=-1;
-	else return ret; 
+	
+//	cout<<"============================="<<endl;
+	return ret; 
 }
 
 void findOption(string cityString,int peopleNum,int dayNum){
@@ -374,6 +411,7 @@ void findOption(string cityString,int peopleNum,int dayNum){
 		HotelClass *HIndex = Index -> HotelList;
 		while(HIndex != NULL){//遍历酒店列表 
 			//此时HIndex 指向的是一个酒店
+			
 			int retNum = calcMinPrice(HIndex,peopleNum,dayNum);
 			if(retNum){
 				++totOption;
