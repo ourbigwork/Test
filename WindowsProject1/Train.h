@@ -1,35 +1,35 @@
 /*
 
 [2019-05-25] 
-Train.h 火车类 头文件
-使用方法：将Train.h放入编译器中的头文件夹中
-		在cpp源文件上加入 #include<Train.h> 即可 
+Train.h ���� ͷ�ļ�
+ʹ�÷�������Train.h����������е�ͷ�ļ�����
+		��cppԴ�ļ��ϼ��� #include<Train.h> ���� 
 
-注：以下的功能都是尽可能的模仿12306移动端的功能
+ע�����µĹ��ܶ��Ǿ����ܵ�ģ��12306�ƶ��˵Ĺ���
 
-思路：TrainList 保存的是列车的所有信息，是一个由Train类构成的vector
-我们另建一个Station 类，用来保存：经过某一站的所有列车信息，便于后续操作
-12306基本的操作有：查询某车次信息，查询某车站（某地）信息
-根据客户要求（从哪到哪）给出可供选择的列车信息，并可以根据用户需求进行优先级排序
+˼·��TrainList ��������г���������Ϣ����һ����Train�๹�ɵ�vector
+��������һ��Station �࣬�������棺����ĳһվ�������г���Ϣ�����ں�������
+12306�����Ĳ����У���ѯĳ������Ϣ����ѯĳ��վ��ĳ�أ���Ϣ
+���ݿͻ�Ҫ�󣨴��ĵ��ģ������ɹ�ѡ����г���Ϣ�������Ը����û�����������ȼ�����
 
-在12306中，有2种优先级顺序：发时最早，耗时最少。但这个和  "到时最早"  是不同的 
-12306在给出可供选择的方案时，用户可选择换乘（仅一次）或不换乘两种方式。
-如果考虑不限换乘次数下的  "到时最早"，将会非常麻烦，原因许多。
-一是目前在网上查询的资料 大多是地铁或者公交的最佳换乘，或者就是最少站数换乘算法，这个仅需要简单的最短路算法求解即可
-然而火车不同，火车的到站时间是有限制的。很可能一个满足上述算法的换乘方案实际上是不可行的（换乘只能换乘当前时间之后到达的车次）
-从实际意义角度上来说，换乘次数越多，越不可能达到所谓的到时最早，但从算法的理论角度上来看，这样说是不对的 
-所以，一个比较好的方法就是搜索。考虑到如果按列车车次建边，车站为点建图，从现实意义角度上来看，这必将是一个稠密图
-这样我们跑搜索的算法效率极差极差，甚至说是不可能得到最优的结果，只能得到一个比较接近的值，这就和我们的初衷违背
-因此，在上述考虑之下，我没有写这个到时最早的算法。而是完整的复刻12306的最多换乘一次的可行方案查找算法
+��12306�У���2�����ȼ�˳�򣺷�ʱ���磬��ʱ���١��������  "��ʱ����"  �ǲ�ͬ�� 
+12306�ڸ����ɹ�ѡ��ķ���ʱ���û���ѡ�񻻳ˣ���һ�Σ��򲻻������ַ�ʽ��
+������ǲ��޻��˴����µ�  "��ʱ����"������ǳ��鷳��ԭ�����ࡣ
+һ��Ŀǰ�����ϲ�ѯ������ ����ǵ������߹�������ѻ��ˣ����߾�������վ�������㷨���������Ҫ�򵥵����·�㷨��⼴��
+Ȼ���𳵲�ͬ���𳵵ĵ�վʱ���������Ƶġ��ܿ���һ�����������㷨�Ļ��˷���ʵ�����ǲ����еģ�����ֻ�ܻ��˵�ǰʱ��֮�󵽴�ĳ��Σ�
+��ʵ������Ƕ�����˵�����˴���Խ�࣬Խ�����ܴﵽ��ν�ĵ�ʱ���磬�����㷨�����۽Ƕ�������������˵�ǲ��Ե� 
+���ԣ�һ���ȽϺõķ����������������ǵ�������г����ν��ߣ���վΪ�㽨ͼ������ʵ����Ƕ�����������ؽ���һ������ͼ
+�����������������㷨Ч�ʼ�������˵�ǲ����ܵõ����ŵĽ����ֻ�ܵõ�һ���ȽϽӽ���ֵ����ͺ����ǵĳ���Υ��
+��ˣ�����������֮�£���û��д�����ʱ������㷨�����������ĸ���12306����໻��һ�εĿ��з��������㷨
 
-另一个要点是，12306并没有提供所谓的花钱最少查找，因为在12306移动端我们可以看到：选择座位等级是确定选择了某一趟车次 
-在提交订单时才可以的，而且仅提供了简单的总价计算功能，和Hotel的最少花钱方案又有很大区别，因此按下不表。
+��һ��Ҫ���ǣ�12306��û���ṩ��ν�Ļ�Ǯ���ٲ��ң���Ϊ��12306�ƶ������ǿ��Կ�����ѡ����λ�ȼ���ȷ��ѡ����ĳһ�˳��� 
+���ύ����ʱ�ſ��Եģ����ҽ��ṩ�˼򵥵��ܼۼ��㹦�ܣ���Hotel�����ٻ�Ǯ�������кܴ�������˰��²�����
 
 
-大体框架：
-struct viaStation,用来构成Train类 
-Train类 包括列车的基本信息 以及输出方式
-Station类 包括车站名以及一个timetable，保存所有经过该车站的列车
+�����ܣ�
+struct viaStation,��������Train�� 
+Train�� �����г��Ļ�����Ϣ �Լ������ʽ
+Station�� ������վ���Լ�һ��timetable���������о����ó�վ���г�
  
 */
 #include <vector>
@@ -46,13 +46,13 @@ using namespace std;
  
 /*
 
-这一段考虑自己重写Time类 后来想想还是不太重要
-如果时间多的话再写
+��һ�ο����Լ���дTime�� �������뻹�ǲ�̫��Ҫ
+���ʱ���Ļ���д
  
 class MyTime{
 	public:
-		static int ThisYear,ThisMonth;//仅考虑在某个月内的车票信息 
-		int day,hour,minute;//时间
+		static int ThisYear,ThisMonth;//��������ĳ�����ڵĳ�Ʊ��Ϣ 
+		int day,hour,minute;//ʱ��
 		MyTime(){
 			day=hour=minute=0;
 		} 
@@ -69,10 +69,10 @@ class MyTime{
 			if(ThisYear%400 == 0) return true;
 			return false;
 		}
-		bool operator+(int inMinute){//分钟数 (用于火车晚点) 
+		bool operator+(int inMinute){//������ (���ڻ�����) 
 			minute+=inMinute;
 			hour+=(minute/60);minute%=60;
-			if(hour==24) hour=0,day++;//不考虑天数溢出的问题 
+			if(hour==24) hour=0,day++;//������������������� 
 		}
 };
 int MyTime::ThisYear = 2019;
@@ -81,8 +81,8 @@ int MyTime::ThisMonth = 6;
 */
 
 struct viaStation{
-	int hour,minute;//时间 
-	string stationName;//车站名 
+	int hour,minute;//ʱ�� 
+	string stationName;//��վ�� 
 	void outStationInfo(){
 		cout<<stationName<<" (";if(hour<10) cout<<0;
 		cout<<hour<<":";if(minute<10) cout<<0;
@@ -90,27 +90,27 @@ struct viaStation{
 	}
 }; 
 
-//时间比较 返回 L<R 的 bool 值 
+//ʱ��Ƚ� ���� L<R �� bool ֵ 
 bool cmpTime(viaStation &L,viaStation &R){
 	if(L.hour!=R.hour) return L.hour < R.hour ;
 	else return L.minute < R.minute; 
 }
 
-//名称比较 返回L<R 的 bool 值 
+//���ƱȽ� ����L<R �� bool ֵ 
 bool cmpName(viaStation &L,viaStation &R){
 	return L.stationName < R.stationName;
 }
 
 class Train{
 	public:
-		int seat[3][2];//seat[i][0] 表示i+1等座位 还剩几张票 seat[i][1] 表示i+1等座位 要多少钱 
-		string TrainName;//车次
-		vector<viaStation> route;//途径地 
+		int seat[3][2];//seat[i][0] ��ʾi+1����λ ��ʣ����Ʊ seat[i][1] ��ʾi+1����λ Ҫ����Ǯ 
+		string TrainName;//����
+		vector<viaStation> route;//;���� 
 		
-		//更改信息 
+		//������Ϣ 
 		void changeInfo(){
 			cin>>TrainName;//cout<<TrainName<<endl; 
-			int len;cin>>len;//途径地个数，0,len-1 分别表示首发站和终点站
+			int len;cin>>len;//;���ظ�����0,len-1 �ֱ��ʾ�׷�վ���յ�վ
 			while(len--){
 				viaStation temp;
 				cin>>temp.stationName>>temp.hour>>temp.minute;
@@ -118,10 +118,10 @@ class Train{
 			}
 			for(int i=0;i<3;i++)
 				for(int j=0;j<2;j++)
-					cin>>seat[i][j];//输入车票信息  
+					cin>>seat[i][j];//���복Ʊ��Ϣ  
 		}
 		
-		//输出基本信息 
+		//���������Ϣ 
 		void outputBasicInfo(){
 			cout<<this->TrainName<<" : ";
 			route[0].outStationInfo();
@@ -130,10 +130,10 @@ class Train{
 			cout<<endl;
 		} 
 		void outputSeat(){	
-			cout<<TrainName<<"余票信息:"<<endl;
-			cout<<" 一等("<<seat[0][1]<<"￥)"<<seat[0][0]<<"张 ";
-			cout<<" 二等("<<seat[1][1]<<"￥)"<<seat[1][0]<<"张 ";
-			cout<<" 三等("<<seat[2][1]<<"￥)"<<seat[2][0]<<"张 "<<endl;
+			cout<<TrainName<<"��Ʊ��Ϣ:"<<endl;
+			cout<<" һ��("<<seat[0][1]<<"��)"<<seat[0][0]<<"�� ";
+			cout<<" ����("<<seat[1][1]<<"��)"<<seat[1][0]<<"�� ";
+			cout<<" ����("<<seat[2][1]<<"��)"<<seat[2][0]<<"�� "<<endl;
 		}
 		void outputRoute(){
 			for(int i=0;i<route.size() ;i++){
@@ -142,33 +142,33 @@ class Train{
 			}
 		}
 		
-		//查询是否经过某一站 返回下标 
+		//��ѯ�Ƿ񾭹�ĳһվ �����±� 
 		int findRoute(string InputS){
 			int i=route.size()-1;
 			while(i>=0 && route[i].stationName!=InputS ) i--;
 			return i;			
 		}
 }; 
-class Station{//车站 
+class Station{//��վ 
 	public:
-		string name;//车站名 
-		vector<Train*> timetable;// 时刻表
+		string name;//��վ�� 
+		vector<Train*> timetable;// ʱ�̱�
 		void outputInfo(){
 			/*
-			输出所有经过该站的车次 
-			有一点值得注意，这个输出功能12306并没有。 
-			12306并不提供这种经过某一站的所有车次的输出显示，
-			必须提供准确的车次和日期才可以 
-			所以没有排序 
+			������о�����վ�ĳ��� 
+			��һ��ֵ��ע�⣬����������12306��û�С� 
+			12306�����ṩ���־���ĳһվ�����г��ε������ʾ��
+			�����ṩ׼ȷ�ĳ��κ����ڲſ��� 
+			����û������ 
 			*/ 
 			int i=0;
 			while(i<timetable.size()){
 				cout<<i+1<<":";
-				//输出时，如果是首发、终点站，则正常输出，否则在中间输出到本站的时间
-				if(timetable[i]->route[0].stationName == name //首发站 
-				|| timetable[i]->route[timetable[i]->route.size()-1].stationName == name)//终点站 
+				//���ʱ��������׷����յ�վ��������������������м��������վ��ʱ��
+				if(timetable[i]->route[0].stationName == name //�׷�վ 
+				|| timetable[i]->route[timetable[i]->route.size()-1].stationName == name)//�յ�վ 
 				timetable[i]->outputBasicInfo();
-				else{//非首发 或 终点站 
+				else{//���׷� �� �յ�վ 
 					cout<<timetable[i]->TrainName<<" : ";
 					timetable[i]->route[0].outStationInfo();
 					cout<<" => ";int j=0;
@@ -183,12 +183,12 @@ class Station{//车站
 		} 
 };
 
-vector<Station*> StationList;//车站总表 
+vector<Station*> StationList;//��վ�ܱ� 
 
 /*
 
-查找车站，返回InputName车站所在车站总表的下标(int) 
-如果找不到返回-1 
+���ҳ�վ������InputName��վ���ڳ�վ�ܱ����±�(int) 
+����Ҳ�������-1 
 */
 
 int findStation(string InputName){
@@ -199,8 +199,8 @@ int findStation(string InputName){
 
 /* 
   
-排序：对给定的Train* 的vector进行排序 
-关键字 首发站时间排序(对于车站的timetable排序
+���򣺶Ը�����Train* ��vector�������� 
+�ؼ��� �׷�վʱ������(���ڳ�վ��timetable����
  
 */ 
 void sortByTime(vector<Train*> &Array){
@@ -213,48 +213,48 @@ void sortByTime(vector<Train*> &Array){
 
 /*
 
-添加一辆列车
-注意，我们将列车经过的站台进行更新，也就是说，我们不提供addStation这种操作
-所以，addTrain 将新加入列车总表的列车的所经过的车站信息进行更新
-因此没有写在类内，而是写在类外 
+����һ���г�
+ע�⣬���ǽ��г�������վ̨���и��£�Ҳ����˵�����ǲ��ṩaddStation���ֲ���
+���ԣ�addTrain ���¼����г��ܱ����г����������ĳ�վ��Ϣ���и���
+���û��д�����ڣ�����д������ 
 
 
-addTrain 格式(Example) 
+addTrain ��ʽ(Example) 
 
-T151  车次 
-3  经过站数 
-北京 0 0  站名 几点几分到 
-上海 1 1
-广州 2 2
-1 2 2 3 3 4 一等座余票量，价格，二等座余票量，价格，三等余票，价格 
+T151  ���� 
+3  ����վ�� 
+���� 0 0  վ�� ���㼸�ֵ� 
+�Ϻ� 1 1
+���� 2 2
+1 2 2 3 3 4 һ������Ʊ�����۸񣬶�������Ʊ�����۸�������Ʊ���۸� 
 
 T332
 3
-湖南 2 2
-上海 3 3
-香港 4 4
+���� 2 2
+�Ϻ� 3 3
+��� 4 4
 2 3 4 5 6 7
 
 G312
 3
-北京 1 1
-广州 3 3
-香港 6 6
+���� 1 1
+���� 3 3
+��� 6 6
 4 3 2 1 3 4
 
 */
 
-vector<Train*> TrainList;//列车总表
+vector<Train*> TrainList;//�г��ܱ�
 
 void addTrain(){
 	Train *temp = new Train; 
-	temp->changeInfo();//读入车辆信息
+	temp->changeInfo();//���복����Ϣ
 	TrainList.push_back(temp); 
 	for(int i=0;i<temp->route.size();i++){
-		//枚举经过的车站
-		int index = findStation(temp->route[i].stationName);//查询车站所在下标
+		//ö�پ����ĳ�վ
+		int index = findStation(temp->route[i].stationName);//��ѯ��վ�����±�
 		if(index == -1){
-			//未找到车站，新建此车站
+			//δ�ҵ���վ���½��˳�վ
 			Station *tempStation = new Station;
 			tempStation -> name = temp->route[i].stationName;
 			tempStation -> timetable.push_back(temp);
@@ -266,32 +266,32 @@ void addTrain(){
 	} 
 }
 
-//查找车次 返回下标 
+//���ҳ��� �����±� 
 int findTrain(string InputS){
 	int i=TrainList.size()-1;
 	while(i>=0 && TrainList[i]->TrainName!=InputS) i--;
 	return i; 
 }
 
-//方案结构 
+//�����ṹ 
 struct way{
 	Train* first;
-	Train* second;//如果无需换乘，则此项为NULL
-	int begTime,endTime;//发时，结束时 
+	Train* second;//������軻�ˣ������ΪNULL
+	int begTime,endTime;//��ʱ������ʱ 
 };
 vector<way> Result;
 
 void findResult(){
-	while(!Result.empty()) Result.pop_back();//置为空
-	string Start,End;//起点终点
+	while(!Result.empty()) Result.pop_back();//��Ϊ��
+	string Start,End;//����յ�
 	int StartIndex,EndIndex;
 	cin>>Start>>End;
-	//不考虑换乘
+	//�����ǻ���
 	for(int i=0;i<TrainList.size();i++){
 		StartIndex = TrainList[i]->findRoute(Start);
 		EndIndex = TrainList[i]->findRoute(End);
-		if(StartIndex == -1 || EndIndex == -1) continue; //此车不经过起点或终点
-		if(EndIndex <= StartIndex)  continue; //车是反向的
+		if(StartIndex == -1 || EndIndex == -1) continue; //�˳������������յ�
+		if(EndIndex <= StartIndex)  continue; //���Ƿ����
 	//	cout<<"Here"<<endl;
 		way temp;
 		temp.begTime = TrainList[i]->route[StartIndex].hour*60 + TrainList[i]->route[StartIndex].minute;
@@ -300,25 +300,25 @@ void findResult(){
 		temp.second = NULL;
 		Result.push_back(temp);
 	}
-	//考虑换乘
+	//���ǻ���
 	StartIndex = findStation(Start);
 	EndIndex = findStation(End);
 	for(int i=0;i<StationList[StartIndex]->timetable.size();i++){
-		//这里枚举的是经过起点的所有车
+		//����ö�ٵ��Ǿ����������г�
 		Train *Index = StationList[StartIndex]->timetable[i];
 		int q=Index->findRoute(End);
-		if(q==-1){//不能直达才考虑换乘
+		if(q==-1){//����ֱ��ſ��ǻ���
 			for(int j=0;j<StationList[EndIndex]->timetable.size();j++){
-				//枚举换乘的车辆
+				//ö�ٻ��˵ĳ���
 				Train *NIndex = StationList[EndIndex]->timetable[j];
 			//	cout<<"Attempting:"<<Index->TrainName<<"->"<<NIndex->TrainName<<endl;
 				int p=NIndex->findRoute(Start);
-				if(p==-1)//不能直达
+				if(p==-1)//����ֱ��
 					for(int k=1;k<Index->route.size();k++){
 					//	cout<<"Here"<<endl;
-						//这里枚举在哪一站换乘
+						//����ö������һվ����
 						int r=NIndex->findRoute(Index->route[k].stationName);
-						if(r!=-1 && cmpTime(Index->route[k],NIndex->route[r])){ //可换乘
+						if(r!=-1 && cmpTime(Index->route[k],NIndex->route[r])){ //�ɻ���
 							way temp;
 							temp.first=Index;temp.second=NIndex;
 							temp.begTime=Index->route[Index->findRoute(Start)].hour*60 + Index->route[Index->findRoute(Start)].minute;
@@ -332,32 +332,32 @@ void findResult(){
 	}//for-i
 } 
 
-//按发时最早排序 
+//����ʱ�������� 
 void sortResultEarly(){
 	for(int i=0;i<Result.size();i++)
 		for(int j=1;j<Result.size();j++)
 			if(Result[j].begTime<Result[j-1].begTime) swap(Result[j],Result[j-1]); 
 }
 
-//按耗时最少排序 
+//����ʱ�������� 
 void sortResultFast(){
 	for(int i=0;i<Result.size();i++)
 		for(int j=1;j<Result.size();j++)
 			if(Result[j].endTime-Result[j].begTime<Result[j-1].endTime-Result[j-1].begTime) swap(Result[j],Result[j-1]); 
 }
 
-//输出结果
+//������
 void outputResult(){
-	cout<<endl<<"共为您查到"<<Result.size()<<"条信息"<<endl; 
+	cout<<endl<<"��Ϊ���鵽"<<Result.size()<<"����Ϣ"<<endl; 
 	for(int i=0;i<Result.size();i++){
 		if(Result[i].second==NULL){
-			cout<<Result[i].first->TrainName<<"(直达)"<<endl;
+			cout<<Result[i].first->TrainName<<"(ֱ��)"<<endl;
 			Result[i].first->outputSeat();
 			cout<<endl;
 		}
 		else{
-			//换乘
-			cout<<Result[i].first->TrainName<<"换乘 => "<<Result[i].second->TrainName<<endl;
+			//����
+			cout<<Result[i].first->TrainName<<"(����) => "<<Result[i].second->TrainName<<endl;
 			Result[i].first->outputSeat();
 			Result[i].second->outputSeat();
 			cout<<endl;
@@ -365,10 +365,9 @@ void outputResult(){
 	}
 } 
 
-
-//读取数据
+//��ȡ����
 void TrainDataLoad(){
-	int n;//总列车数
+	int n;//���г���
 	//openfile
 	cin>>n;
 	while(n--) addTrain();

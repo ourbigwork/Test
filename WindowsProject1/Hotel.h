@@ -1,7 +1,7 @@
 
 /*
 
-[2019-05-18] 
+[2019-06-08] 
 Hotel.h 旅馆 酒店类 头文件
 使用方法：将Hotel.h放入编译器中的头文件夹中
 		在cpp源文件上加入 #include<Hotel.h> 即可 
@@ -19,7 +19,6 @@ using namespace std;
 #undef Scenic
 #undef Position
 #undef Region
-
 
 #undef GuestRoom
 
@@ -451,7 +450,7 @@ void sortByPriceDown(){
 	qsort(HotelOptions+1,totOption,sizeof(optionHotel),cmpPriceDown);
 }
 
-void sortDefalut(){
+void sortDefault(){
 	sortByPriceUp();
 	//先升序排列
 	vector<optionHotel> tempArray;
@@ -463,6 +462,96 @@ void sortDefalut(){
 	}
 	for(i=1;i<=totOption;i++)
 		HotelOptions[i]=tempArray[i-1];
+}
+
+/*
+
+酒店模糊搜索 
+
+考虑到是中文字符 占两个字节 所以两两一处理
+例如 设string s="广州", 那么 s[0]s[1] 为 '广'，s[2]s[3]为'州' 
+现在考虑两个字符的相似度比较，设前一个字符编码是i1,i2 后一个为j1,j2 
+由于中文是区块码 (靠前区块)区内按拼音排序 /(靠后区块)区内按偏旁部首排序 
+靠前区主要是常用字，靠后区主要是生僻字。而出现在酒店名称上的字大多是常用字，也即在靠前的区块，
+所以i1和j1的差距影响因子大，i2,j2的差距影响因子小。
+
+我们设两个权重w1,w2, dif = w1*|i1-j1| + w2*|i2-j2| 来计算两个中文字符的差异度 
+dif 越大 说明差别越大，越小则说明越相似。且明显的有dif的取值是[0,+oo)
+可以用指数函数映射成匹配度match,即match = k^dif,(0<k<1),
+k确定match的下降速度 ，映射后match 取值是 (0~1],完全一样的两个字符match=1 
+
+我们计算输入字符串中的每一个字符和对应酒店的名称的匹配度的平均值作为该酒店对输入的匹配度
+考虑到地名影响，看输入内是否有城市名。如果输入有城市名，则应优先考虑该城市的酒店
+也就是说 城市 所占的比重非常大，设这里得出的CityMatch也是处于(0,1]
+然而 CityMatch的取值(略去精度)只会出现三种情况：1 或 0.5 或 0 
+而如果是1或0.5则应该提高城市的比重（出现了完整或部分城市名） 
+将CityMatch开根号，作为权重于酒店匹配度相乘，作为最终的匹配度结果，按该结果排序即可 
+	
+exp:
+ 
+	string s="背景别墅";//北京？ 
+	fuzzySearch(s);
+	outputFuzzy();
+
+*/
+struct fuzzyNode{
+	HotelClass *Node;
+	double sMark;//相似度 
+};
+vector<fuzzyNode> fuzzyRes;
+
+bool cmp_sMark(fuzzyNode L,fuzzyNode R){
+	return L.sMark > R.sMark;
+}
+
+double calcSimilarity(string L,string R){
+	//对中文处理
+	int Ll=L.length(),Rl=R.length();
+	//cout<<Ll<<' '<<Rl<<endl;
+	double w1=0.65,w2=0.35; 
+	double totM=0.0;
+	for(int i=0;i*2<Ll;i++){//L匹配串 R模式串 
+		double maxMatch=0;
+		int i1=(int)L[i*2],i2=(int)L[i*2+1];
+		for(int j=0;j*2<Rl;j++){
+			int j1=(int)R[j*2],j2=(int)R[j*2+1];
+			double dif = w1*abs(i1-j1) + w2*abs(i2-j2);
+			//cout<<i1<<' '<<i2<<' '<<j1<<' '<<j2<<endl;
+			double mat = pow(0.6,dif);
+			maxMatch = mat>maxMatch?mat:maxMatch;
+		}//cout<<maxMatch<<endl;
+		totM+=maxMatch; 
+	}
+	totM=totM*2/(double)Ll;//消除长度影响
+	//cout<<L<<' '<<R<<' '<<totM<<endl;cout<<"======"<<endl;
+	return totM; 
+} 
+
+void fuzzySearch(string InputS){
+	CityClass *CIndex = CityList;
+	double Match = 0;
+	while(CIndex != NULL){//枚举城市
+		double CityMatch = 0;
+		HotelClass *HIndex = CIndex -> HotelList; 
+		CityMatch = sqrt(calcSimilarity(CIndex -> name,InputS));//城市匹配度 
+		while(HIndex != NULL){//枚举酒店 计算酒店匹配度 
+			double HotelMatch=calcSimilarity(InputS , HIndex -> name);
+			Match=CityMatch*HotelMatch;
+			fuzzyRes.push_back((fuzzyNode){HIndex,Match}); 
+			HIndex = HIndex ->next; 
+		}
+		CIndex = CIndex->next;
+	} 
+	sort(fuzzyRes.begin(),fuzzyRes.end(),cmp_sMark);
+}
+
+void outputFuzzy(){
+	cout<<"您是不是在查找：";
+	fuzzyRes[0].Node->printInfo();
+	cout<<endl<<"搜索结果(相似度前10):"<<endl; 
+	for(int i=0;i<10;i++){
+		cout<< fuzzyRes[i].Node->name<<" 相似度: "<<fuzzyRes[i].sMark<<endl;
+	}
 }
 
 

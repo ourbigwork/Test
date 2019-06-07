@@ -108,7 +108,7 @@ void OutLoad(){
 
 void LoadData(){
 	// Openfile;
-	OutLoad();
+//	OutLoad();
 	cin>>Region->tot_Region;
 	for(int i=1;i<=Region->tot_Region;i++){
 		RegionClass *tempRegion= new RegionClass();
@@ -119,10 +119,10 @@ void LoadData(){
 			tempRegion->p[j] = new Scenic();
 		}
 	}
-	Sleep(1000);//¶Ù´ì¸Ð
+	/*Sleep(1000);//¶Ù´ì¸Ð
 	cout<<"Data load finished"<<endl;
 	Sleep(1000);
-	system("cls");
+	system("cls");*/
 }
 
 /*
@@ -377,18 +377,13 @@ void DeleteScenic(string InputS){
 
 */
 void RandomRecommand(){
-	srand(time(0));
 	int MagicN=rand()%Region->tot_Region;
 	RegionClass *Index=Region;
-	while(MagicN--) 
+	while(MagicN){
 		Index= Index->next;
+		MagicN--;
+	}
 	MagicN = 1+ rand()%Index->len;
 	cout<<"Ëæ»úÍÆ¼ö£º"<<Index->name<<" "<<Index->p[MagicN]->name<<endl; 
 }
 
-/*
-
-TODO£º 
-Ä£ºýËÑË÷ 
-
-*/ 
